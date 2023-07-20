@@ -2,7 +2,7 @@ import influxdb_client
 from influxdb_client.client.write_api import SYNCHRONOUS
 
 def read(): 
-    token = "BJoVKfcew0nl2yZ1QgJYhO2J03Pqo37FrGpjuoGPFB6nLbQJyrSmnu_AblLSQPcl6b5_cP9YjSREBQWIw9CYHw=="
+    token = "_6i-0rzenVKTsLYWGBjZ5St7SYZBE_cCeHEk8AcPe0fD1zSNZK5FboxGes5D4NRCGohR5QOsqwkV9ZlBqSEHQQ=="
     org = "IPA"
     bucket = "rokit-db"
     # Store the URL of your InfluxDB instance

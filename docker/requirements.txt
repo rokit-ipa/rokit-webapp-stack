@@ -1,0 +1,7 @@
+influxdb_client
+fastapi
+nicegui
+matplotlib
+numpy
+pydantic
+uvicorn

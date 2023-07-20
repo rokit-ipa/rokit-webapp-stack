@@ -4,4 +4,5 @@
 ```sh
  FastAPI.main:app --reload
 ```
-4. Before starting FastAPI, be sure to write something to the database, empty database will throw an error :) 
+3. Before starting FastAPI, be sure to write something to the database, empty database will throw an error :)
+4. Go to http://127.0.0.1:8000/main to see the nicegui 

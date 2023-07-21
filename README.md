@@ -1,24 +1,33 @@
-# Test_Kit
-1. Setup InfluxDB. You need a token, organisation and bucket. Adapt the files read_database and write_database with your token,organisation and bucket. 
-   
-   ```
-   docker run --name influxdb -d -p 8086:8086 --volume `pwd`/influxdb2:/var/lib/influxdb2 --volume `pwd`/config.yml:/etc/influxdb2/config.yml influxdb:2.0.7
-   ```
+# RoKit testing stack
+-------------------------------------------------------------------------
 
+**1.** Run the influxDB on the hostmachine
    ```
-   docker exec influxdb influx setup \
-    --bucket rokit-db \
-    --org IPA \
-    --password qwertz1234 \
-    --username rar \
-    --force
+   docker-compose  -f docker-compose-influxdb.yaml up --build
+   ```
+-------------------------------------------------------------------------
 
-   ```
-   
+**2.** Setup InfluxDB. 
+   1. Copy the token from the influxDB dashboard 
+   2. Organisation - IPA
+   3. Bucket -  rokit-db 
+   4. Set a username & password
+-------------------------------------------------------------------------
+**3.**  Add these setup details to the `.env` files in the `database` directory
+
+-------------------------------------------------------------------------
+
+**4.** Write some dummy data into the influxDB to start testing your application
    ```
    py Database/write_influxdb.py
    ```
-2. Start FastAPI with uvicorn 
+-------------------------------------------------------------------------
+
+**5.** Start FastAPI with uvicorn which also launches the nicegui
    ```
-   uvicorn FastAPI.main:app --reload
+   uvicorn  view.rokitAPI.main:app --reload --host localhost --port 8000
    ```
+
+-------------------------------------------------------------------------
+###### Note: report issues in the GitHub issues.
+-------------------------------------------------------------------------

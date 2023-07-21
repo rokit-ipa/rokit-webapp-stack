@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  nicegui:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile-nicegui
+    container_name: nicegui
+    ports: 
+      - "8000:8000"
+    extra_hosts:
+      - "influxdb:0.0.0.0"
+     

@@ -18,7 +18,7 @@ def read():
     #Query operation 
     query_api = client.query_api()
     query = 'from(bucket:"rokit-db")\
-    |> range(start: -30m)\
+    |>range(start: -90d)\
     |> filter(fn:(r) => r.test_case == "max_vel")'
     result = query_api.query(org=org, query=query)
     print(result)

@@ -8,20 +8,20 @@ services:
     volumes:
     - ./influxdb2:/var/lib/influxdb2
     - ./config.yml:/etc/influxdb2/config.yml
-    command: 
-      influx setup \
-      --bucket rokit-db \
-      --org IPA \
-      --password qwertz1234 \
-      --username rar \
-      --force
+    depends_on:
+    - nicegui
+    # command: 
+    #   influx setup \
+    #   --bucket rokit-db \
+    #   --org IPA \
+    #   --password qwertz1234 \
+    #   --username rar \
+    #   --force
 
   nicegui:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: nicegui
     ports: 
       - "8000:8000"
-    depends_on:
-    - influxdb

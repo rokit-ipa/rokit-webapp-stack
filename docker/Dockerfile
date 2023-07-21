@@ -1,9 +1,15 @@
-FROM python:3
-WORKDIR /
+FROM python:3-slim-buster
 
-COPY requirements.txt ./
+RUN mkdir /src
+WORKDIR /src
+
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD [ "uvicorn", "FastAPI.main:app --reload", "--host", "0.0.0.0", "--port", "80" ]
+CMD [ "uvicorn", "FastAPI.main:app --reload"]
+
+# COPY ./entrypoint.sh /
+# RUN chmod +x /entrypoint.sh
+# ENTRYPOINT ["/entrypoint.sh"]

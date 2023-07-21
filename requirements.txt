@@ -5,3 +5,4 @@ matplotlib
 numpy
 pydantic
 uvicorn
+python-dotenv

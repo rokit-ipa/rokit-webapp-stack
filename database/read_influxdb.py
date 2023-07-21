@@ -1,12 +1,20 @@
 import influxdb_client
 from influxdb_client.client.write_api import SYNCHRONOUS
+import os
+from dotenv import load_dotenv, find_dotenv
+
+
+
 
 def read(): 
-    token = "BJoVKfcew0nl2yZ1QgJYhO2J03Pqo37FrGpjuoGPFB6nLbQJyrSmnu_AblLSQPcl6b5_cP9YjSREBQWIw9CYHw=="
-    org = "IPA"
-    bucket = "rokit-db"
-    # Store the URL of your InfluxDB instance
-    url="http://localhost:8086"
+    load_dotenv(find_dotenv())
+    token =  os.environ.get("")
+
+
+    token = os.environ.get("INFLUXDB_TOKEN")
+    org = os.environ.get("INFLUXDB_ORG")
+    bucket = os.environ.get("INFLUXDB_BUCKET")
+    url=os.environ.get("INFLUXDB_URL")  
 
     client = influxdb_client.InfluxDBClient(
         url=url,

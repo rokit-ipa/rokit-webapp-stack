@@ -3,7 +3,7 @@ from nicegui import app, ui
 import matplotlib
 import numpy
 
-from Database import read_influxdb
+from database import read_influxdb
 
 TABS = ["Run a Test", "View and Edit the Test", "Testcases Protocol Guidelines"]
 TESTCASES_LIST = ["MAX_VELOCITY", "MAX_VELOCITY_SLOPE", "BREAKING_DISTANCE"]

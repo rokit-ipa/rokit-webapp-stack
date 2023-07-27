@@ -3,7 +3,7 @@
 
 **1.** Run the influxDB on the hostmachine
    ```
-   docker-compose  -f docker-compose-influxdb.yaml up --build
+   docker-compose  -f docker-compose up --build
    ```
 -------------------------------------------------------------------------
 
@@ -20,12 +20,6 @@
 **4.** Write some dummy data into the influxDB to start testing your application
    ```
    py Database/write_influxdb.py
-   ```
--------------------------------------------------------------------------
-
-**5.** Start FastAPI with uvicorn which also launches the nicegui
-   ```
-   uvicorn  view.rokitAPI.main:app --reload --host localhost --port 8000
    ```
 
 -------------------------------------------------------------------------

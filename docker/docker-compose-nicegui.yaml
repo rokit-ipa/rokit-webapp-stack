@@ -3,10 +3,12 @@ services:
   nicegui:
     build:
       context: ..
-      dockerfile: docker/Dockerfile-nicegui
+      dockerfile: view/Dockerfile
     container_name: nicegui
     ports: 
       - "8000:8000"
-    extra_hosts:
-      - "influxdb:0.0.0.0"
-     
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: on-failure
+    # depends_on: 
+    #   - influxdb

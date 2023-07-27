@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+  influxdb:
+    image: influxdb:2.0.7
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    volumes:
+      - ./influxdb2:/var/lib/influxdb2
+      - ./config.yml:/etc/influxdb2/config.yml
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  nicegui-app:
+    build:
+      context: .
+      dockerfile: view/Dockerfile
+    container_name: nicegui-app
+    ports: 
+      - "8000:8000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: on-failure
+    depends_on: 
+      - influxdb
+    environment:
+      - INFLUXDB_URL=http://influxdb:8086
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

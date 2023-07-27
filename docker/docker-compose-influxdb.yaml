@@ -8,3 +8,5 @@ services:
     volumes:
       - ./influxdb2:/var/lib/influxdb2
       - ./config.yml:/etc/influxdb2/config.yml
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

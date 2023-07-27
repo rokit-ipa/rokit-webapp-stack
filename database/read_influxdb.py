@@ -8,9 +8,6 @@ from dotenv import load_dotenv, find_dotenv
 
 def read(): 
     load_dotenv(find_dotenv())
-    token =  os.environ.get("")
-
-
     token = os.environ.get("INFLUXDB_TOKEN")
     org = os.environ.get("INFLUXDB_ORG")
     bucket = os.environ.get("INFLUXDB_BUCKET")

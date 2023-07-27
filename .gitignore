@@ -1,6 +1,7 @@
 influxdb.conf/
 influxdb2/
 config.yaml/
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

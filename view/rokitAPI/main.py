@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 import uvicorn
 from fastapi import FastAPI
-from database import read_influxdb
 from view import frontend
 
 app = FastAPI()
-results = read_influxdb.read()
 
 @app.get('/')
 def read_root():

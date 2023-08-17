@@ -14,7 +14,7 @@ services:
   nicegui-app:
     build:
       context: .
-      dockerfile: view/Dockerfile
+      dockerfile: rokit_app/Dockerfile
     container_name: nicegui-app
     ports: 
       - "8000:8000"

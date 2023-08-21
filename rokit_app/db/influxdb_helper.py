@@ -21,8 +21,9 @@ write_api = client.write_api(write_options=SYNCHRONOUS)
 
 
 def write_influxdb(data):
-    point = influxdb_client.Point("test_1") \
-        .tag("test_case", data.test_name) \
+    point = influxdb_client.Point(data.test_name)  \
+        .field("trial_number", data.trial_number) \
+        .field("tracking_object", data.tracking_object) \
         .field("temperature", data.temperature) \
         .field("humidity", data.humidity) \
         .field("inclination", data.inclination) \
@@ -31,11 +32,13 @@ def write_influxdb(data):
 
     try:
         write_api.write(bucket=bucket, org=org, record=point)
-        return {"message": "Data logged to the db"}
+        response = {"message": "Data logged to the db"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         client.close()
+
+    return response
 
 def read_influxdb():
     query = f'from(bucket: "{bucket}") |> range(start: -1h) |> filter(fn: (r) => r._measurement == "test_1")'

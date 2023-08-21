@@ -5,16 +5,11 @@ from nicegui.events import ValueChangeEventArguments
 from rokit_app.rokitAPI import main as api
 from rokit_app.rokitAPI.models import TestParameters, TestResults
 
-
-
 # Define the constants
 conditions_file_path = "rokit_app/static/conditions.md"
 protocols_file_path = "rokit_app/static/protocols.md"
-TABS = ["Run Tests", "Results", "Test Protocols", "Test Conditions"]
-ID_INPUT = ["trial_number"]
-FLOAT_INPUT = ["temperature", "humidity", "inclination", ]
-STR_INPUT = ["floor_type", "notes"]
-TESTCASES = ["MAX_VELOCITY", "MAX_VELOCITY_SLOPE"]
+tab_list = ["Run Tests", "Results", "Test Protocols", "Test Conditions"]
+test_list = ["MAX_VELOCITY", "MAX_VELOCITY_SLOPE"]
 
 
 def init(fastapi_app: FastAPI) -> None:
@@ -29,27 +24,25 @@ def init(fastapi_app: FastAPI) -> None:
         ui.notify(f'{name}: {event.value}')
 
     def submit_params(payload):
+        api.set_params(payload)
         # request = TestParameters(**payload)
         # api.set_params(request)
-        request = TestParameters(
-            test_name=payload["test_name"],
-            trial_number=payload["trial_number"],
-            tracking_object=payload["tracking_object"],
-            temperature=payload["temperature"],
-            humidity=payload["humidity"],
-            inclination=payload["inclination"],
-            floor_type=payload["floor_type"],
-            notes=payload["notes"],
-        )
-        api.set_params(request)
-
-
-
+        # request = TestParameters(
+        #     test_name=payload["test_name"],
+        #     trial_number=payload["trial_number"],
+        #     tracking_object=payload["tracking_object"],
+        #     temperature=payload["temperature"],
+        #     humidity=payload["humidity"],
+        #     inclination=payload["inclination"],
+        #     floor_type=payload["floor_type"],
+        #     notes=payload["notes"],
+        # )
+        
     @ui.page('/ui')
     def view():
         with ui.header().classes(replace='row items-center') as header:
             with ui.tabs().classes('w-full justify-center') as tabs:
-                for tab in TABS:
+                for tab in tab_list:
                     ui.tab(tab)
 
         with ui.footer(value=True) as footer:
@@ -64,8 +57,8 @@ def init(fastapi_app: FastAPI) -> None:
         
 
 
-        with ui.tab_panels(tabs, value=TABS[0]):
-            with ui.tab_panel(TABS[1]):
+        with ui.tab_panels(tabs, value=tab_list[0]):
+            with ui.tab_panel(tab_list[1]):
                 #ui.label('Test Results').classes('text-h4 w-full')
                 def add_row(key):
                     item = key
@@ -107,75 +100,75 @@ def init(fastapi_app: FastAPI) -> None:
                 table2 = ui.table(columns=columns, rows=[],
                                   row_key='trial').classes('w-full my-10')
 
-            with ui.tab_panel(TABS[0]):                
-                payload = {
-                    "test_name": "MAX_VELOCITY",    
-                    "trial_number": 1,         
-                    "tracking_object": "none",     
-                    "temperature": 0.0,        
-                    "humidity": 0.0,           
-                    "inclination": 0.0,        
-                    "floor_type": "none",          
-                    "notes": "none",               
-                }
-
-                def update_payload(name, value):
-                    payload[name] = value
-
+            with ui.tab_panel(tab_list[0]):                
+                payload = TestParameters()    
+ 
                 ui.label('Configure the Test').classes('text-h4')
 
                 with ui.row().classes('items-center'):
                     with ui.card().classes('my-5 h-40'):
                         ui.label('Select Test').classes('text-h6')
-                        with ui.element('div').classes('p-3 bg-blue-100'):
-                            select0 = ui.select(TESTCASES, value=TESTCASES[0])
-                            update_payload("test_name", select0.value)
+                        select0 = ui.select(test_list, value=test_list[1], on_change=lambda: update_test_name(select0.value))
+                        def update_test_name(selected_value):
+                            payload.test_name = selected_value
+                        
                     with ui.card().classes('my-0 h-40'):
                         ui.label('Select the tracking object').classes(
                             'text-h6')
-                        ui.radio(['tracker_1', 'tracker_2'],value='tracker_1', on_change=lambda e: update_payload("tracking_object", str(e.value))).props('inline')
+                        button0 = ui.radio(['tracker_1', 'tracker_2'],value='tracker_1', on_change=lambda: update_tracker(button0.value)).props('inline')
+                        def update_tracker(selected_value):
+                            payload.tracking_object=selected_value
+                        
+                    with ui.card().classes('my-0 h-120'):
+                        ui.label('Set environment conditions').classes('text-h6')
+                        
+                        def update_trial_number(selected_value):
+                            payload.trial_number=selected_value  
+
+                        def update_temperature(selected_value):
+                            payload.temperature=selected_value       
+
+                        def update_humidity(selected_value):
+                            payload.humidity=selected_value
+
+                        def update_notes(selected_value):
+                            payload.notes=selected_value
+
+                        def update_inclination(selected_value):
+                            payload.inclination=float(selected_value)
+
+                        def update_floor_type(selected_value):
+                            payload.floor_type=selected_value
+
+                        ui.number("trial_number", value="0", on_change=lambda e: update_trial_number(e.value))
+                        ui.number("temperature", value="0.0", on_change=lambda e: update_temperature(e.value))                        
+                        ui.number("humidity", value="0.0", on_change=lambda e: update_humidity(e.value))
+                        ui.textarea("notes", value="", on_change=lambda e: update_notes(e.value))
 
                     with ui.card().classes('my-0 h-120'):
-                        ui.label('Set environment conditions').classes(
+                        ui.label('Set testbed conditions').classes(
                             'text-h6')
-                        for field_name in ID_INPUT:
-                            ui.input(field_name, on_change=lambda e: update_payload(field_name, str(e.value)))
-
-                        for field_name in FLOAT_INPUT:
-                            ui.input(field_name, on_change=lambda e: update_payload(field_name, float(e.value)))
-                            # value = ui.input(field_name)
-                            # payload[field_name] = value
-
-                        for field_name in STR_INPUT:
-                            ui.input(field_name, on_change=lambda e: update_payload(field_name, str(e.value)))
-
-                            
+                        ui.number("inclination", value="0.0", on_change=lambda e: update_inclination(e.value))
+                        ui.input("floor type", value="", on_change=lambda e: update_floor_type(e.value)) 
                         
-                            # value = ui.input(field_name)
-                            # payload[field_name] = value
-
                 ## on_click=lambda: ui.notify('Saved parameters!', type='positive',
-
-                def update_trial(number):
-                    payload["trial_number"]=int(number)
-
-                with ui.card().classes('my-5'):
-                    with ui.row().classes('items-center'):
-                        ui.button('Save parameters', on_click=submit_params(payload))
-                        ui.button('Start Test', on_click=update_trial(1))
-                        # ui.button('Trial 1', on_click=update_trial(1))
-                        # ui.button('Trial 2', on_click=update_trial(2))
-                        # ui.button('Trial 3', on_click=update_trial(3))
-                        # ui.button('Trial 4', on_click=update_trial(4))
-                        # ui.button('Trial 5', on_click=update_trial(5))
-                        ui.button('Test Result', on_click=lambda: ui.colors())
+                    with ui.card().classes('my-5'):
+                        with ui.row().classes('items-center'):
+                            ui.button('Save parameters', on_click=lambda: submit_params(payload))
+                            ui.button('Start Test', on_click=lambda: ui.colors())
+                            # ui.button('Trial 1', on_click=update_trial(1))
+                            # ui.button('Trial 2', on_click=update_trial(2))
+                            # ui.button('Trial 3', on_click=update_trial(3))
+                            # ui.button('Trial 4', on_click=update_trial(4))
+                            # ui.button('Trial 5', on_click=update_trial(5))
+                            ui.button('Test Result', on_click=lambda: ui.notify('Check Results Tab!'))
 
 
-            with ui.tab_panel(TABS[2]):
+            with ui.tab_panel(tab_list[2]):
                 markdown_content = read_markdown_file(protocols_file_path)
                 ui.markdown(markdown_content)
 
-            with ui.tab_panel(TABS[3]):
+            with ui.tab_panel(tab_list[3]):
                 markdown_content = read_markdown_file(conditions_file_path)
                 ui.markdown(markdown_content)
 

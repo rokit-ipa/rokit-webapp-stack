@@ -19,7 +19,6 @@ client = influxdb_client.InfluxDBClient(
     bucket=bucket)
 write_api = client.write_api(write_options=SYNCHRONOUS)
 
-
 def write_influxdb(data):
     point = influxdb_client.Point(data.test_name)  \
         .field("trial_number", data.trial_number) \
@@ -41,20 +40,31 @@ def write_influxdb(data):
     return response
 
 def read_influxdb():
-    query = f'from(bucket: "{bucket}") |> range(start: -1h) |> filter(fn: (r) => r._measurement == "test_1")'
-    result = client.query_api().query(org=org, query=query)
-    
-    data = []
+    query = f'from(bucket: "{bucket}") |> range(start: -3h) |> filter(fn: (r) => r._measurement == "MAX_VELOCITY")'
+    result = client.query_api().query(org=org, query=query)   
+    # data = []
+    # for table in result:
+    #     for record in table.records:
+    #         data.append({
+    #             "test_name": record.values["_field"],
+    #             "temperature": record.values["temperature"],
+    #             "humidity": record.values["humidity"],
+    #             "inclination": record.values["inclination"],
+    #             "floor_type": record.values["floor_type"],
+    #             "notes": record.values["notes"]
+    #         })
+    # return data
+    return result
 
-    for table in result:
-        for record in table.records:
-            data.append({
-                "test_name": record.values["_field"],
-                "temperature": record.values["temperature"],
-                "humidity": record.values["humidity"],
-                "inclination": record.values["inclination"],
-                "floor_type": record.values["floor_type"],
-                "notes": record.values["notes"]
-            })
+def read_influxdb_query(measurement, start_time, end_time):
+    query_api = client.query_api()
 
-    return data
+    query = f'from(bucket: "{bucket}") \
+        |> range(start: {start_time}, stop: {end_time}) \
+        |> filter(fn: (r) => r["_measurement"] == "{measurement}")'
+
+    try:
+        result = query_api.query(org=org, query=query)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

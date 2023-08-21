@@ -2,7 +2,7 @@
 
 ### **Test for rated speed**:
 
-![]('../image.png')
+![]('/../image.png')
 
 #### Conditions:
   - The robot should be equipped with a rated load.

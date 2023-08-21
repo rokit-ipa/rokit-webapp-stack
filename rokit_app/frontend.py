@@ -4,7 +4,6 @@ from nicegui import ui
 from nicegui.events import ValueChangeEventArguments
 from rokit_app.rokitAPI import main as api
 from rokit_app.rokitAPI.models import TestParameters, TestResults
-
 # Define the constants
 conditions_file_path = "rokit_app/static/conditions.md"
 protocols_file_path = "rokit_app/static/protocols.md"
@@ -25,18 +24,6 @@ def init(fastapi_app: FastAPI) -> None:
 
     def submit_params(payload):
         api.set_params(payload)
-        # request = TestParameters(**payload)
-        # api.set_params(request)
-        # request = TestParameters(
-        #     test_name=payload["test_name"],
-        #     trial_number=payload["trial_number"],
-        #     tracking_object=payload["tracking_object"],
-        #     temperature=payload["temperature"],
-        #     humidity=payload["humidity"],
-        #     inclination=payload["inclination"],
-        #     floor_type=payload["floor_type"],
-        #     notes=payload["notes"],
-        # )
         
     @ui.page('/ui')
     def view():

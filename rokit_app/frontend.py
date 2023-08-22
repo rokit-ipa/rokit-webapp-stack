@@ -46,27 +46,28 @@ def init(fastapi_app: FastAPI) -> None:
 
         with ui.tab_panels(tabs, value=tab_list[0]):
             with ui.tab_panel(tab_list[1]):
-                #ui.label('Test Results').classes('text-h4 w-full')
                 def add_row(key):
-                    item = key
-                    table1.add_rows({'trial': item,
-                                    'temperature': 19,
-                                     'humidity': 75,
-                                     'inclination': 5,
-                                     'floortype': 'wood',
+                    max_velocity_table.add_rows({'trial': key,
+                                     'robot name': 'MiR', 
+                                     'temperature': 25,
+                                     'humidity': 80,
+                                     'inclination': 0,
+                                     'floor_type': 'wood',
                                      'tracking_object': 'rokit_1',
                                      'notes': 'ambient light was less',
-                                     'velocity': random.uniform(5, 8), })
-                    table2.add_rows({'trial': item,
-                                    'temperature': 19,
-                                     'humidity': 75,
+                                     'velocity': random.uniform(0, 1), })
+                    max_velocity_slope_table.add_rows({'trial': key,
+                                     'robot name': 'MiR',
+                                     'temperature': 25,
+                                     'humidity': 80,
                                      'inclination': 5,
-                                     'floortype': 'wood',
+                                     'floor_type': 'wood',
                                      'tracking_object': 'rokit_2',
                                      'notes': 'ambient light was less',
-                                     'velocity': random.uniform(5, 8), })
+                                     'velocity': random.uniform(0, 1), })
                 columns = [
                     {'name': 'trial', 'label': 'Trial name', 'field': 'trial'},
+                    {'name': 'robot name', 'label': 'Robot name', 'field': 'robot name'},
                     {'name': 'temperature',
                         'label': 'Temperature(°C)', 'field': 'temperature'},
                     {'name': 'humidity',
@@ -79,13 +80,17 @@ def init(fastapi_app: FastAPI) -> None:
                     {'name': 'velocity','label': 'Velocity(m/s)', 'field': 'velocity'},
                 ]
 
+
                 ui.label('MAX_VELOCITY Test Results').classes('text-h4')
-                table1 = ui.table(columns=columns, rows=[],
+                max_velocity_table = ui.table(columns=columns, rows=[],
                                   row_key='trial').classes('w-full my-10')
 
                 ui.label('MAX_VELOCITY_SLOPE Test Results').classes('text-h4')
-                table2 = ui.table(columns=columns, rows=[],
+                max_velocity_slope_table = ui.table(columns=columns, rows=[],
                                   row_key='trial').classes('w-full my-10')
+
+                add_row(1)
+                add_row(2)
 
             with ui.tab_panel(tab_list[0]):                
                 payload = TestParameters()    

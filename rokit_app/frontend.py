@@ -4,11 +4,23 @@ from nicegui import ui
 from nicegui.events import ValueChangeEventArguments
 from rokit_app.rokitAPI import main as api
 from rokit_app.rokitAPI.models import TestParameters, TestResults
+import shlex
+import os
+import signal
+import asyncio 
+
 # Define the constants
 conditions_file_path = "rokit_app/static/conditions.md"
 protocols_file_path = "rokit_app/static/protocols.md"
 tab_list = ["Run Tests", "Results", "Test Protocols", "Test Conditions"]
 test_list = ["MAX_VELOCITY", "MAX_VELOCITY_SLOPE"]
+command_start_app = "ros2 launch vicon_calculator.launch.py"
+parameter_names = ["robottype", "tracking_object", "trial_number", "temperature", "humidity", "notes", "inclination", "floor type"]
+# define some global variables
+parameter_list = [None, None, None, None, None, None, None, None, None]
+process = None
+task = None
+
 
 
 def init(fastapi_app: FastAPI) -> None:
@@ -24,6 +36,42 @@ def init(fastapi_app: FastAPI) -> None:
 
     def submit_params(payload):
         api.set_params(payload)
+    
+    async def wait_for_process(process):
+        await process.wait()
+    
+    async def stop_app(): 
+        print("I want to cancel, but dont do it")
+        print(process)
+        task.cancel()
+        process.send_signal(signal.SIGINT)
+    
+    async def start_app():
+        """Run a command in the background and display the output in the pre-created dialog."""        
+        command = command_start_app
+        print(parameter_list)
+        for i in range(0, 9): 
+            command = command + "--" + parameter_names[0] +":=" + str(parameter_list[i])
+            
+        print("HERE IS PARAMETER LIST")
+        print(parameter_list)
+        process = await asyncio.create_subprocess_exec(
+            *shlex.split(command), cwd=os.path.dirname(os.path.abspath(__file__))
+        )
+
+        try:
+            # Create an event loop
+            loop = asyncio.get_event_loop()
+            # Create a task for running the command
+            task = asyncio.create_task(wait_for_process(process))
+            print(task)
+        except asyncio.CancelledError:
+            # The task was cancelled, terminate the process
+            process.terminate()
+            # Wait for the process to terminate
+            await process.wait()
+          
+
         
     @ui.page('/ui')
     def view():
@@ -97,74 +145,51 @@ def init(fastapi_app: FastAPI) -> None:
  
                 ui.label('Configure the Test').classes('text-h4')
 
-                with ui.row().classes('items-center'):
-                    with ui.column().classes('items-center'):
-                        with ui.card().classes('my-5 h-40'):
+                with ui.row():
+                    with ui.column().classes('h-120'):
+                        #ui.label("__________________________________________________________________________________________________________________________________________________________________")
+                        with ui.card().classes('mt-10 mb-1 w-64'):
                             ui.label('Select Test').classes('text-h6')
-                            ui.select(test_list, value=test_list[1], on_change=lambda e: update_test_name(e.value))
-                            def update_test_name(selected_value):
-                                payload.test_name = selected_value
+                            ui.select(test_list, value=test_list[1], on_change=lambda e: update_value(e.value,0))
                         
-                        with ui.card().classes('my-0 h-40'):
+                        with ui.card().classes('my-1 w-64'):
                             ui.label('Set Robot details').classes('text-h6')
-                            ui.input("robot name", value="MiR", on_change=lambda e: update_robot_name(e.value)) 
-                            def update_robot_name(selected_value):
-                                payload.robot_name=selected_value  
+                            ui.input("robot name", value="MiR", on_change=lambda e: update_value(e.value, 1))
+                        
+                        with ui.card().classes('my-1 w-64'):
+                            ui.label('Select the tracking object').classes('text-h6')
+                            button0 = ui.radio(['tracker_1', 'tracker_2'], value='tracker_1', on_change=lambda: update_value(button0.value, 2)).props('inline')
+                    
+                    with ui.column().classes('h-120'):
+                        with ui.card().classes('mt-10 mb-1 w-64'):
+                            ui.label('Set environment conditions').classes('text-h6')
+                            ui.number("trial_number", value="0", on_change=lambda e: update_value(e.value, 3))
+                            ui.number("temperature", value="0.0", on_change=lambda e: update_value(e.value, 4))
+                            ui.number("humidity", value="0.0", on_change=lambda e: update_value(e.value, 5))
+                            ui.textarea("notes", value="", on_change=lambda e: update_value(e.value, 6))
+                    
+                    with ui.card().classes('mt-10 w-64'):
+                        ui.label('Set testbed conditions').classes('text-h6')
+                        ui.number("inclination", value="0.0", on_change=lambda e: update_value(e.value, 7))
+                        ui.input("floor type", value="", on_change=lambda e: update_value(e.value, 8))
+                
+                with ui.row().classes('mt-10 items-center justify-center'):
+                        ui.button('Start Test', on_click=start_app).classes('mx-2')
+                        ui.button('Stop Test', on_click=stop_app).classes('mx-2')
+                        
+                def update_value(selected_value, index):
+                    payload.robot_name=selected_value 
+                    parameter_list[index] = selected_value
                             
-                    with ui.card().classes('my-0 h-40'):
-                        ui.label('Select the tracking object').classes('text-h6')
-                        button0 = ui.radio(['tracker_1', 'tracker_2'],value='tracker_1', on_change=lambda: update_tracker(button0.value)).props('inline')
-                        def update_tracker(selected_value):
-                            payload.tracking_object=selected_value
                         
-                    with ui.card().classes('my-0 h-120'):
-                        ui.label('Set environment conditions').classes('text-h6')
-                        
-                        def update_trial_number(selected_value):
-                            payload.trial_number=selected_value  
-
-                        def update_temperature(selected_value):
-                            payload.temperature=selected_value       
-
-                        def update_humidity(selected_value):
-                            payload.humidity=selected_value
-
-                        def update_notes(selected_value):
-                            payload.notes=selected_value
-
-                        def update_inclination(selected_value):
-                            payload.inclination=float(selected_value)
-
-                        def update_floor_type(selected_value):
-                            payload.floor_type=selected_value
-
-                        ui.number("trial_number", value="0", on_change=lambda e: update_trial_number(e.value))
-                        ui.number("temperature", value="0.0", on_change=lambda e: update_temperature(e.value))                        
-                        ui.number("humidity", value="0.0", on_change=lambda e: update_humidity(e.value))
-                        ui.textarea("notes", value="", on_change=lambda e: update_notes(e.value))
-                        
-                    with ui.card().classes('my-0 h-120'):
-                        ui.label('Set testbed conditions').classes(
-                            'text-h6')
-                        ui.number("inclination", value="0.0", on_change=lambda e: update_inclination(e.value))
-                        ui.input("floor type", value="", on_change=lambda e: update_floor_type(e.value)) 
-                        
-                ## on_click=lambda: ui.notify('Saved parameters!', type='positive',
-                    with ui.card().classes('my-5'):
-                        with ui.row().classes('items-center'):
-                            ui.button('Save parameters', on_click=lambda: submit_params(payload))
-                            ui.button('Start Trackers',  on_click=lambda: ui.notify(f'Trackers are running now!'))
-                            ui.button('Start Test', on_click=lambda: ui.notify(f'Test started!'))
-                            ui.button('Test Result', on_click=lambda: ui.notify('Check Results Tab!'))
-
-
+                                           
             with ui.tab_panel(tab_list[2]):
                 markdown_content = read_markdown_file(protocols_file_path)
-                ui.markdown(markdown_content)
+                #ui.markdown('''markdown_content''')
 
             with ui.tab_panel(tab_list[3]):
                 markdown_content = read_markdown_file(conditions_file_path)
-                ui.markdown(markdown_content)
+                #ui.markdown(markdown_content)
 
     ui.run_with(
         fastapi_app,

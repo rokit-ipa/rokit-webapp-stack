@@ -93,15 +93,21 @@ def init(fastapi_app: FastAPI) -> None:
                 ui.label('Configure the Test').classes('text-h4')
 
                 with ui.row().classes('items-center'):
-                    with ui.card().classes('my-5 h-40'):
-                        ui.label('Select Test').classes('text-h6')
-                        select0 = ui.select(test_list, value=test_list[1], on_change=lambda: update_test_name(select0.value))
-                        def update_test_name(selected_value):
-                            payload.test_name = selected_value
+                    with ui.column().classes('items-center'):
+                        with ui.card().classes('my-5 h-40'):
+                            ui.label('Select Test').classes('text-h6')
+                            ui.select(test_list, value=test_list[1], on_change=lambda e: update_test_name(e.value))
+                            def update_test_name(selected_value):
+                                payload.test_name = selected_value
                         
+                        with ui.card().classes('my-0 h-40'):
+                            ui.label('Set Robot details').classes('text-h6')
+                            ui.input("robot name", value="MiR", on_change=lambda e: update_robot_name(e.value)) 
+                            def update_robot_name(selected_value):
+                                payload.robot_name=selected_value  
+                            
                     with ui.card().classes('my-0 h-40'):
-                        ui.label('Select the tracking object').classes(
-                            'text-h6')
+                        ui.label('Select the tracking object').classes('text-h6')
                         button0 = ui.radio(['tracker_1', 'tracker_2'],value='tracker_1', on_change=lambda: update_tracker(button0.value)).props('inline')
                         def update_tracker(selected_value):
                             payload.tracking_object=selected_value
@@ -131,7 +137,7 @@ def init(fastapi_app: FastAPI) -> None:
                         ui.number("temperature", value="0.0", on_change=lambda e: update_temperature(e.value))                        
                         ui.number("humidity", value="0.0", on_change=lambda e: update_humidity(e.value))
                         ui.textarea("notes", value="", on_change=lambda e: update_notes(e.value))
-
+                        
                     with ui.card().classes('my-0 h-120'):
                         ui.label('Set testbed conditions').classes(
                             'text-h6')
@@ -142,12 +148,8 @@ def init(fastapi_app: FastAPI) -> None:
                     with ui.card().classes('my-5'):
                         with ui.row().classes('items-center'):
                             ui.button('Save parameters', on_click=lambda: submit_params(payload))
-                            ui.button('Start Test', on_click=lambda: ui.colors())
-                            # ui.button('Trial 1', on_click=update_trial(1))
-                            # ui.button('Trial 2', on_click=update_trial(2))
-                            # ui.button('Trial 3', on_click=update_trial(3))
-                            # ui.button('Trial 4', on_click=update_trial(4))
-                            # ui.button('Trial 5', on_click=update_trial(5))
+                            ui.button('Start Trackers',  on_click=lambda: ui.notify(f'Trackers are running now!'))
+                            ui.button('Start Test', on_click=lambda: ui.notify(f'Test started!'))
                             ui.button('Test Result', on_click=lambda: ui.notify('Check Results Tab!'))
 
 

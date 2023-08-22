@@ -18,17 +18,18 @@ client = influxdb_client.InfluxDBClient(
     org=org,
     bucket=bucket)
 write_api = client.write_api(write_options=SYNCHRONOUS)
+query_api = client.query_api()
 
 def write_influxdb(data):
     point = influxdb_client.Point(data.test_name)  \
         .field("trial_number", data.trial_number) \
+        .field("robot_name", data.robot_name) \
         .field("tracking_object", data.tracking_object) \
         .field("temperature", data.temperature) \
         .field("humidity", data.humidity) \
         .field("inclination", data.inclination) \
         .field("floor_type", data.floor_type) \
         .field("notes", data.notes)
-
     try:
         write_api.write(bucket=bucket, org=org, record=point)
         response = {"message": "Data logged to the db"}
@@ -41,19 +42,12 @@ def write_influxdb(data):
 
 def read_influxdb():
     query = f'from(bucket: "{bucket}") |> range(start: -3h) |> filter(fn: (r) => r._measurement == "MAX_VELOCITY")'
-    result = client.query_api().query(org=org, query=query)   
-    # data = []
-    # for table in result:
-    #     for record in table.records:
-    #         data.append({
-    #             "test_name": record.values["_field"],
-    #             "temperature": record.values["temperature"],
-    #             "humidity": record.values["humidity"],
-    #             "inclination": record.values["inclination"],
-    #             "floor_type": record.values["floor_type"],
-    #             "notes": record.values["notes"]
-    #         })
-    # return data
+    result = query_api.query(org=org, query=query)  
+    results = []
+    for table in result:
+        for record in table.records:
+            results.append((record.get_field(), record.get_value()))
+            print(results)
     return result
 
 def read_influxdb_query(measurement, start_time, end_time):

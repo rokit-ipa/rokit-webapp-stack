@@ -94,8 +94,10 @@ def init(fastapi_app: FastAPI) -> None:
 
         with ui.tab_panels(tabs, value=tab_list[0]):
             with ui.tab_panel(tab_list[1]):
-                def add_row(key):
-                    max_velocity_table.add_rows({'trial': key,
+                ui.button('Refresh', on_click=add_row()).classes('mx-2')
+                def add_row():
+                    data = api.get_results()
+                    max_velocity_table.add_rows({'trial': data[0][1],
                                      'robot name': 'MiR', 
                                      'temperature': 25,
                                      'humidity': 80,
@@ -103,8 +105,8 @@ def init(fastapi_app: FastAPI) -> None:
                                      'floor_type': 'wood',
                                      'tracking_object': 'rokit_1',
                                      'notes': 'ambient light was less',
-                                     'velocity': random.uniform(0, 1), })
-                    max_velocity_slope_table.add_rows({'trial': key,
+                                     'velocity': data[1][1] })
+                    max_velocity_slope_table.add_rows({'trial': data[0][1],
                                      'robot name': 'MiR',
                                      'temperature': 25,
                                      'humidity': 80,
@@ -112,7 +114,7 @@ def init(fastapi_app: FastAPI) -> None:
                                      'floor_type': 'wood',
                                      'tracking_object': 'rokit_2',
                                      'notes': 'ambient light was less',
-                                     'velocity': random.uniform(0, 1), })
+                                     'velocity': data[1][1] })
                 columns = [
                     {'name': 'trial', 'label': 'Trial name', 'field': 'trial'},
                     {'name': 'robot name', 'label': 'Robot name', 'field': 'robot name'},
@@ -123,7 +125,7 @@ def init(fastapi_app: FastAPI) -> None:
                     {'name': 'inclination',
                         'label': 'Inclination(degree)', 'field': 'inclination'},
                     {'name': 'tracking_object', 'label': 'Tracking Object', 'field': 'tracking_object'},
-                    {'name': 'floortype', 'label': 'Floor type', 'field': 'floortype'},
+                    {'name': 'floor_type', 'label': 'Floor type', 'field': 'floor_type'},
                     {'name': 'notes', 'label': 'Notes', 'field': 'notes'},
                     {'name': 'velocity','label': 'Velocity(m/s)', 'field': 'velocity'},
                 ]
@@ -136,9 +138,6 @@ def init(fastapi_app: FastAPI) -> None:
                 ui.label('MAX_VELOCITY_SLOPE Test Results').classes('text-h4')
                 max_velocity_slope_table = ui.table(columns=columns, rows=[],
                                   row_key='trial').classes('w-full my-10')
-
-                add_row(1)
-                add_row(2)
 
             with ui.tab_panel(tab_list[0]):                
                 payload = TestParameters()    

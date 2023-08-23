@@ -16,27 +16,19 @@ async def read_index():
 
 @app.post('/setparams')
 def set_params(params: TestParameters):
-    return write_influxdb(params)
+    pass
 
 @app.get('/getparams')
 def get_params():
-    # start_time = (datetime.now() - timedelta(days=1)).isoformat()  # 1 day ago
-    # end_time = datetime.now().isoformat()
-    # measurement = "MAX_VELOCITY"
-    # data = read_influxdb_query(measurement, start_time, end_time)
-    # return data
-    return read_influxdb()
-
+    pass
 
 @app.post('/storeresults')
-def store_results():
-    pass
+def store_results(request: TestResults):
+    return write_influxdb(request)
 
 @app.get('/getresults')
 def get_results():
-    pass
-
-
+    return read_influxdb()
 
 frontend.init(app)
 

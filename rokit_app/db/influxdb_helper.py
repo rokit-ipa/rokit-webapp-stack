@@ -41,14 +41,14 @@ def write_influxdb(data):
     return response
 
 def read_influxdb():
-    query = f'from(bucket: "{bucket}") |> range(start: -3h) |> filter(fn: (r) => r._measurement == "MAX_VELOCITY")'
-    result = query_api.query(org=org, query=query)  
     results = []
+    query = 'from(bucket:"rokit-db")\
+            |> range(start: -30m)'
+    result = query_api.query(org=org, query=query)
     for table in result:
         for record in table.records:
             results.append((record.get_field(), record.get_value()))
-            print(results)
-    return result
+    return results
 
 def read_influxdb_query(measurement, start_time, end_time):
     query_api = client.query_api()

@@ -2,28 +2,28 @@ version: '3.8'
 services:
   influxdb:
     image: influxdb:2.0.7
-    container_name: influxdb
+    container_name: influx-db
     ports:
       - "8086:8086"
     volumes:
       - ./influxdb2:/var/lib/influxdb2
       - ./config.yml:/etc/influxdb2/config.yml
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
   nicegui-app:
     build:
       context: .
       dockerfile: rokit_app/Dockerfile
-    container_name: nicegui-app
+    container_name: webui-app
     ports: 
       - "8000:8000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./rokit_app/:/rokit_app/ 
     restart: on-failure
     depends_on: 
       - influxdb
     environment:
-      - INFLUXDB_URL=http://influxdb:8086
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - INFLUXDB_TOKEN=_gm-1xk9ASgPjiyhJ4ejx4IdECWJvTRRSz50gW4eKbeK46YPY0jLS9RzOglKSAFaE3iS5gJEKaDWpPt34VCBsA==
+      - INFLUXDB_ORG=IPA
+      - INFLUXDB_BUCKET=rokit-db
+      - INFLUXDB_URL=http://localhost:8086

@@ -84,11 +84,11 @@ def init(fastapi_app: FastAPI) -> None:
             ui.label(
                 'RoKit testing stack @ Fraunhofer IPA 2023').classes('absolute-center items-center')
 
-        with ui.left_drawer(value=True, ).classes('bg-blue-100') as left_drawer_0:
+        with ui.left_drawer(value=True, ).classes('bg-blue-100'):
             ui.label('')
 
-        with ui.right_drawer(value=True).classes('bg-blue-100') as right_drawer_0:
-            ui.label('')
+        with ui.right_drawer(value=True).classes('bg-blue-100'):
+            ui.label('Hello')
         
 
 
@@ -147,7 +147,6 @@ def init(fastapi_app: FastAPI) -> None:
 
                 with ui.row():
                     with ui.column().classes('h-120'):
-                        #ui.label("__________________________________________________________________________________________________________________________________________________________________")
                         with ui.card().classes('mt-10 mb-1 w-64'):
                             ui.label('Select Test').classes('text-h6')
                             ui.select(test_list, value=test_list[1], on_change=lambda e: update_value(e.value,0))
@@ -180,16 +179,14 @@ def init(fastapi_app: FastAPI) -> None:
                 def update_value(selected_value, index):
                     payload.robot_name=selected_value 
                     parameter_list[index] = selected_value
-                            
-                        
-                                           
+                                        
             with ui.tab_panel(tab_list[2]):
                 markdown_content = read_markdown_file(protocols_file_path)
-                #ui.markdown('''markdown_content''')
+                ui.markdown(markdown_content)
 
             with ui.tab_panel(tab_list[3]):
                 markdown_content = read_markdown_file(conditions_file_path)
-                #ui.markdown(markdown_content)
+                ui.markdown(markdown_content)
 
     ui.run_with(
         fastapi_app,

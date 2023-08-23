@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 import random
 from nicegui import ui
-from nicegui.events import ValueChangeEventArguments
 from rokit_app.rokitAPI import main as api
 from rokit_app.rokitAPI.models import TestParameters, TestResults
+import rokit_app.frontend_helper as frontend_helper
 import shlex
 import os
 import signal
@@ -14,13 +14,11 @@ conditions_file_path = "rokit_app/static/conditions.md"
 protocols_file_path = "rokit_app/static/protocols.md"
 tab_list = ["Run Tests", "Results", "Test Protocols", "Test Conditions"]
 test_list = ["MAX_VELOCITY", "MAX_VELOCITY_SLOPE"]
-command_start_app = "ros2 launch vicon_calculator.launch.py"
-parameter_names = ["robottype", "tracking_object", "trial_number", "temperature", "humidity", "notes", "inclination", "floor type"]
+ros_launch_command = "ros2 launch vicon_calculator.launch.py"
 # define some global variables
-parameter_list = [None, None, None, None, None, None, None, None, None]
 process = None
 task = None
-
+result =  TestResults()
 
 
 def init(fastapi_app: FastAPI) -> None:
@@ -29,10 +27,6 @@ def init(fastapi_app: FastAPI) -> None:
         with open(file_path, "r") as f:
             markdown_content = f.read()
         return markdown_content
-
-    def show(event: ValueChangeEventArguments):
-        name = type(event.sender).__name__
-        ui.notify(f'{name}: {event.value}')
 
     def submit_params(payload):
         api.set_params(payload)
@@ -46,23 +40,29 @@ def init(fastapi_app: FastAPI) -> None:
         task.cancel()
         process.send_signal(signal.SIGINT)
     
-    async def start_app():
-        """Run a command in the background and display the output in the pre-created dialog."""        
-        command = command_start_app
-        print(parameter_list)
-        for i in range(0, 9): 
-            command = command + "--" + parameter_names[0] +":=" + str(parameter_list[i])
+    async def start_app(payload):
+        """Run a ros_launch_command in the background and display the output in the pre-created dialog."""        
+        ros_launch_command = "ros2 launch vicon_calculator.launch.py"
+        ros_launch_command += f" --test_name:={payload.test_name}"
+        ros_launch_command += f" --trial_number:={payload.trial_number}"
+        ros_launch_command += f" --robot_name:={payload.robot_name}"
+        ros_launch_command += f" --tracking_object:={payload.tracking_object}"
+        ros_launch_command += f" --temperature:={payload.temperature}"
+        ros_launch_command += f" --humidity:={payload.humidity}"
+        ros_launch_command += f" --inclination:={payload.inclination}"
+        ros_launch_command += f" --floor_type:={payload.floor_type}"
+        ros_launch_command += f" --notes:={payload.notes}"
             
         print("HERE IS PARAMETER LIST")
-        print(parameter_list)
+        print(ros_launch_command)
         process = await asyncio.create_subprocess_exec(
-            *shlex.split(command), cwd=os.path.dirname(os.path.abspath(__file__))
+            *shlex.split(ros_launch_command), cwd=os.path.dirname(os.path.abspath(__file__))
         )
 
         try:
             # Create an event loop
             loop = asyncio.get_event_loop()
-            # Create a task for running the command
+            # Create a task for running the ros_launch_command
             task = asyncio.create_task(wait_for_process(process))
             print(task)
         except asyncio.CancelledError:
@@ -82,7 +82,7 @@ def init(fastapi_app: FastAPI) -> None:
 
         with ui.footer(value=True) as footer:
             ui.label(
-                'RoKit testing stack @ Fraunhofer IPA 2023').classes('absolute-center items-center')
+                'RoKit testing stack © Fraunhofer IPA 2023').classes('absolute-center items-center')
 
         with ui.left_drawer(value=True, ).classes('bg-blue-100'):
             ui.label('')
@@ -149,36 +149,33 @@ def init(fastapi_app: FastAPI) -> None:
                     with ui.column().classes('h-120'):
                         with ui.card().classes('mt-10 mb-1 w-64'):
                             ui.label('Select Test').classes('text-h6')
-                            ui.select(test_list, value=test_list[1], on_change=lambda e: update_value(e.value,0))
+                            ui.select(test_list, value=test_list[1], on_change=lambda e: frontend_helper.update_test_name(e.value))
                         
                         with ui.card().classes('my-1 w-64'):
                             ui.label('Set Robot details').classes('text-h6')
-                            ui.input("robot name", value="MiR", on_change=lambda e: update_value(e.value, 1))
+                            ui.input("robot name", value="MiR", on_change=lambda e: frontend_helper.update_robot_name(e.value))
                         
                         with ui.card().classes('my-1 w-64'):
                             ui.label('Select the tracking object').classes('text-h6')
-                            button0 = ui.radio(['tracker_1', 'tracker_2'], value='tracker_1', on_change=lambda: update_value(button0.value, 2)).props('inline')
+                            button0 = ui.radio(['tracker_1', 'tracker_2'], value='tracker_1', on_change=lambda: frontend_helper.update_tracking_object(button0.value)).props('inline')
                     
                     with ui.column().classes('h-120'):
                         with ui.card().classes('mt-10 mb-1 w-64'):
                             ui.label('Set environment conditions').classes('text-h6')
-                            ui.number("trial_number", value="0", on_change=lambda e: update_value(e.value, 3))
-                            ui.number("temperature", value="0.0", on_change=lambda e: update_value(e.value, 4))
-                            ui.number("humidity", value="0.0", on_change=lambda e: update_value(e.value, 5))
-                            ui.textarea("notes", value="", on_change=lambda e: update_value(e.value, 6))
+                            ui.number("trial_number", value="0", on_change=lambda e: frontend_helper.update_trial_number(e.value))
+                            ui.number("temperature", value="0.0", on_change=lambda e: frontend_helper.update_temperature(e.value))
+                            ui.number("humidity", value="0.0", on_change=lambda e: frontend_helper.update_humidity(e.value))
+                            ui.textarea("notes", value="", on_change=lambda e: frontend_helper.update_notes(e.value))
                     
                     with ui.card().classes('mt-10 w-64'):
                         ui.label('Set testbed conditions').classes('text-h6')
-                        ui.number("inclination", value="0.0", on_change=lambda e: update_value(e.value, 7))
-                        ui.input("floor type", value="", on_change=lambda e: update_value(e.value, 8))
+                        ui.number("inclination", value="0.0", on_change=lambda e: frontend_helper.update_inclination(e.value))
+                        ui.input("floor type", value="", on_change=lambda e: frontend_helper.update_floor_type(e.value))
                 
                 with ui.row().classes('mt-10 items-center justify-center'):
-                        ui.button('Start Test', on_click=start_app).classes('mx-2')
+                        ui.button('Start Test', on_click=start_app(payload)).classes('mx-2')
                         ui.button('Stop Test', on_click=stop_app).classes('mx-2')
                         
-                def update_value(selected_value, index):
-                    payload.robot_name=selected_value 
-                    parameter_list[index] = selected_value
                                         
             with ui.tab_panel(tab_list[2]):
                 markdown_content = read_markdown_file(protocols_file_path)

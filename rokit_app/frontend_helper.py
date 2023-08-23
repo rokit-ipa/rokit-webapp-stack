@@ -26,3 +26,7 @@ def update_test_name(value):
 
 def update_robot_name(value):
     payload.robot_name=value 
+
+
+def update_tracking_object(value):
+    payload.tracking_object=value 

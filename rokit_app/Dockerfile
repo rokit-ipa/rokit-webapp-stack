@@ -10,4 +10,4 @@ COPY ./rokit_app ./rokit_app
 # Set up a volume mount to reflect changes in the local rokit_app directory
 VOLUME /rokit_app
 # Specify the command to run when the container starts
-CMD [ "uvicorn", "rokit_app.rokitAPI.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD [ "uvicorn", "rokit_app.rokitAPI.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

@@ -8,6 +8,7 @@ services:
     volumes:
       - ./influxdb2:/var/lib/influxdb2
       - ./config.yml:/etc/influxdb2/config.yml
+    network_mode: "host" 
     extra_hosts:
       - "host.docker.internal:host-gateway"
   nicegui-app:
@@ -24,9 +25,10 @@ services:
     depends_on: 
       - influxdb
     environment:
-      - INFLUXDB_TOKEN=_gm-1xk9ASgPjiyhJ4ejx4IdECWJvTRRSz50gW4eKbeK46YPY0jLS9RzOglKSAFaE3iS5gJEKaDWpPt34VCBsA==
+      - INFLUXDB_TOKEN=fjMscyrmZMNKMMrA6fjHn-f_NUqHjTR4nXbfWWmFPZce1HlIQbY8EBl9x4anTqQiJ7Gp8WRtAf9kmUYMTsqOeg==
       - INFLUXDB_ORG=IPA
       - INFLUXDB_BUCKET=rokit-db
       - INFLUXDB_URL=http://localhost:8086
+    network_mode: "host" 
     extra_hosts:
       - "host.docker.internal:host-gateway"

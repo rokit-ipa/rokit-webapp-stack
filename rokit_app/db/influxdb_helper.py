@@ -29,6 +29,7 @@ def write_influxdb(data):
         .field("humidity", data.humidity) \
         .field("inclination", data.inclination) \
         .field("floor_type", data.floor_type) \
+        .field("velocity", data.velocity) \
         .field("notes", data.notes)
     try:
         write_api.write(bucket=bucket, org=org, record=point)

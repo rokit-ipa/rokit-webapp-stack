@@ -3,21 +3,21 @@ services:
   influxdb:
     image: influxdb:2.0.7
     container_name: influx-db
-    ports:
-      - "8086:8086"
+    # ports:
+    #   - "8086:8086"
     volumes:
       - ./influxdb2:/var/lib/influxdb2
       - ./config.yml:/etc/influxdb2/config.yml
-    network_mode: "host" 
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    network_mode: 'host' 
+    # extra_hosts:
+      # - "host.docker.internal:host-gateway"
   nicegui-app:
     build:
       context: .
       dockerfile: rokit_app/Dockerfile
     container_name: webui-app
-    ports: 
-      - "8000:8000"
+    # ports: 
+    #   - "8000:8000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./rokit_app/:/rokit_app/ 
@@ -25,10 +25,10 @@ services:
     depends_on: 
       - influxdb
     environment:
-      - INFLUXDB_TOKEN=fjMscyrmZMNKMMrA6fjHn-f_NUqHjTR4nXbfWWmFPZce1HlIQbY8EBl9x4anTqQiJ7Gp8WRtAf9kmUYMTsqOeg==
+      - INFLUXDB_TOKEN=wZQ0d111qhVQ6ynz5zGGOJfde02ODVK0_d-EZn-mVAX7s-wNUn4SRBPSFfUGS9PN-45gY9AoYFgUSbn4ph6AjA==
       - INFLUXDB_ORG=IPA
       - INFLUXDB_BUCKET=rokit-db
       - INFLUXDB_URL=http://localhost:8086
-    network_mode: "host" 
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    network_mode: 'host' 
+    # extra_hosts:
+    # - "host.docker.internal:host-gateway"

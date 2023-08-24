@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-import random
 from nicegui import ui
 from rokit_app.rokitAPI import main as api
 from rokit_app.rokitAPI.models import TestParameters, TestResults
@@ -88,53 +87,40 @@ def init(fastapi_app: FastAPI) -> None:
             ui.label('')
 
         with ui.right_drawer(value=True).classes('bg-blue-100'):
-            ui.label('Hello')
+            ui.label('')
         
 
 
         with ui.tab_panels(tabs, value=tab_list[0]):
             with ui.tab_panel(tab_list[1]):
-                def add_row():
-                    data = api.get_results()
-                    max_velocity_table.add_rows({'trial': data[0][1],
-                                     'robot name': 'MiR', 
-                                     'temperature': 25,
-                                     'humidity': 80,
-                                     'inclination': 0,
-                                     'floor_type': 'wood',
-                                     'tracking_object': 'rokit_1',
-                                     'notes': 'ambient light was less',
-                                     'velocity': data[1][1] })
-                    max_velocity_slope_table.add_rows({'trial': data[0][1],
-                                     'robot name': 'MiR',
-                                     'temperature': 25,
-                                     'humidity': 80,
-                                     'inclination': 5,
-                                     'floor_type': 'wood',
-                                     'tracking_object': 'rokit_1',
-                                     'notes': 'ambient light was less',
-                                     'velocity': data[1][1] })
+            # Define the function to populate the table with fetched data
+                def update_table():
+                    responses = api.read_results()
+                    # test_results = response.json()  # Convert JSON response to a Python list
+                    # Add rows to the table
+                    for response in responses:
+                        max_velocity_table.add_rows(response)
+   
                 columns = [
                     {'name': 'trial', 'label': 'Trial name', 'field': 'trial'},
                     {'name': 'robot name', 'label': 'Robot name', 'field': 'robot name'},
-                    {'name': 'temperature','label': 'Temperature(°C)', 'field': 'temperature'},
+                    {'name': 'test name', 'label': 'Test name', 'field': 'test name'},
+                    {'name': 'temperature', 'label': 'Temperature(°C)', 'field': 'temperature'},
                     {'name': 'humidity', 'label': 'Humidity(%)', 'field': 'humidity'},
                     {'name': 'inclination', 'label': 'Inclination(degree)', 'field': 'inclination'},
                     {'name': 'tracking_object', 'label': 'Tracking Object', 'field': 'tracking_object'},
                     {'name': 'floor_type', 'label': 'Floor type', 'field': 'floor_type'},
                     {'name': 'notes', 'label': 'Notes', 'field': 'notes'},
-                    {'name': 'velocity','label': 'Velocity(m/s)', 'field': 'velocity'},
+                    {'name': 'velocity', 'label': 'Velocity(m/s)', 'field': 'velocity'},
                 ]
-                ui.button('REFRESH', on_click=add_row)
-                # ui.button('Refresh', on_click=add_row())
+                # Create UI components
+                ui.button('REFRESH', on_click=update_table)
+                ui.label('Test Results').classes('text-h4')
 
-                ui.label('MAX_VELOCITY Test Results').classes('text-h4')
-                max_velocity_table = ui.table(columns=columns, rows=[],
-                                  row_key='trial').classes('w-full my-10')
+                # Create the table and initially populate it
+                max_velocity_table = ui.table(columns=columns, rows=[], row_key='trial', on_select=update_table).classes('w-full my-10')
+                #update_table()  # Populate the table initially
 
-                ui.label('MAX_VELOCITY_SLOPE Test Results').classes('text-h4')
-                max_velocity_slope_table = ui.table(columns=columns, rows=[],
-                                  row_key='trial').classes('w-full my-10')
 
             with ui.tab_panel(tab_list[0]):                
                 payload = TestParameters()    

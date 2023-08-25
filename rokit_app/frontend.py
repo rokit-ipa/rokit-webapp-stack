@@ -90,17 +90,29 @@ def init(fastapi_app: FastAPI) -> None:
             ui.label('')
         
 
-
+# Results table TAB
         with ui.tab_panels(tabs, value=tab_list[0]):
             with ui.tab_panel(tab_list[1]):
-            # Define the function to populate the table with fetched data
+                # Define the function to populate the table with fetched data
                 def update_table():
                     responses = api.read_results()
-                    # test_results = response.json()  # Convert JSON response to a Python list
-                    # Add rows to the table
-                    for response in responses:
-                        max_velocity_table.add_rows(response)
-   
+                    max_velocity_rows = [response for response in responses if response['test name'] == 'MAX_VELOCITY']
+                    for row in max_velocity_rows:
+                        max_velocity_table.add_rows(row)
+                    max_velocity_slope_rows = [response for response in responses if response['test name'] == 'MAX_VELOCITY_SLOPE']
+                    for row in max_velocity_slope_rows:
+                        max_velocity_slope_table.add_rows(row)
+                    calculate_average_velocity(responses, 'MAX_VELOCITY')
+                    calculate_average_velocity(responses, 'MAX_VELOCITY_SLOPE')
+
+                def calculate_average_velocity(responses, test_name):
+                    velocities = [response['velocity'] for response in responses if response['test name'] == test_name]
+                    if velocities:
+                        average_velocity = sum(velocities) / len(velocities)
+                        ui.label(f"Average Velocity for {test_name} Test : {average_velocity:.3f} m/s").classes('text-h6')
+                    else:
+                        ui.label(f"No data available for {test_name} Test").classes('text-h4')
+
                 columns = [
                     {'name': 'trial', 'label': 'Trial name', 'field': 'trial'},
                     {'name': 'robot name', 'label': 'Robot name', 'field': 'robot name'},
@@ -113,15 +125,14 @@ def init(fastapi_app: FastAPI) -> None:
                     {'name': 'notes', 'label': 'Notes', 'field': 'notes'},
                     {'name': 'velocity', 'label': 'Velocity(m/s)', 'field': 'velocity'},
                 ]
-                # Create UI components
+
+                ui.label('MAX_VELOCITY Test Results').classes('text-h4')
+                max_velocity_table = ui.table(columns=columns, rows=[], row_key='trial').classes('w-full my-10')
+                ui.label('MAX_VELOCITY_SLOPE Test Results').classes('text-h4')
+                max_velocity_slope_table = ui.table(columns=columns, rows=[], row_key='trial').classes('w-full my-10')
                 ui.button('REFRESH', on_click=update_table)
-                ui.label('Test Results').classes('text-h4')
 
-                # Create the table and initially populate it
-                max_velocity_table = ui.table(columns=columns, rows=[], row_key='trial', on_select=update_table).classes('w-full my-10')
-                #update_table()  # Populate the table initially
-
-
+## Test Configuration TAB
             with ui.tab_panel(tab_list[0]):                
                 payload = TestParameters()    
  
@@ -158,11 +169,12 @@ def init(fastapi_app: FastAPI) -> None:
                         ui.button('Start Test', on_click=start_app(payload)).classes('mx-2')
                         ui.button('Stop Test', on_click=stop_app).classes('mx-2')
                         
-                                        
+# Protocol TAB                                        
             with ui.tab_panel(tab_list[2]):
                 markdown_content = read_markdown_file(protocols_file_path)
                 ui.markdown(markdown_content)
 
+# Test Conditions TAB
             with ui.tab_panel(tab_list[3]):
                 markdown_content = read_markdown_file(conditions_file_path)
                 ui.markdown(markdown_content)

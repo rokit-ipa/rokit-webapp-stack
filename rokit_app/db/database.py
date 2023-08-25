@@ -2,8 +2,11 @@ from sqlalchemy import create_engine, Column, Integer, String, Float
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from rokit_app.db.model import TestResults
+import os
+username = os.getlogin()
+db_file_path = f"/home/{username}/sql_db.db"
+DATABASE_URL = f"sqlite:///{db_file_path}"
 
-DATABASE_URL = "sqlite:///./sql_db.db"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

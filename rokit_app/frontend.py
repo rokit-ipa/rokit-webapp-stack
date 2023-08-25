@@ -109,9 +109,12 @@ def init(fastapi_app: FastAPI) -> None:
                     velocities = [response['velocity'] for response in responses if response['test name'] == test_name]
                     if velocities:
                         average_velocity = sum(velocities) / len(velocities)
-                        ui.label(f"Average Velocity for {test_name} Test : {average_velocity:.3f} m/s").classes('text-h6')
+                        with ui.card().classes('mt-10 mb-1 w-120'):
+                            with ui.row():
+                                ui.label(f"Average Velocity for {test_name} Test : {average_velocity:.3f} m/s").classes('text-h6').style('color: #398E3D')
                     else:
-                        ui.label(f"No data available for {test_name} Test").classes('text-h4')
+                        with ui.card().classes('mt-10 mb-1 w-120'):
+                            ui.label(f"No data available for {test_name} Test").classes('text-h6').style('color: #EF5350')
 
                 columns = [
                     {'name': 'trial', 'label': 'Trial name', 'field': 'trial'},

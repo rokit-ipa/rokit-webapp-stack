@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 from datetime import datetime, timedelta
 from rokit_app.rokitAPI.models import TestParameters, TestResults
 from rokit_app import frontend
-from rokit_app.db.influxdb_helper import write_influxdb, read_influxdb
+#from rokit_app.db.influxdb_helper import write_influxdb, read_influxdb
 from rokit_app.db.database import create_test_results, SessionLocal, TestResultsDB
 
 app = FastAPI()
@@ -23,13 +23,13 @@ def set_params(params: TestParameters):
 def get_params():
     pass
 
-@app.post('/storeresults')
-def store_results(request: TestResults):
-    return write_influxdb(request)
+# @app.post('/storeresults')
+# def store_results(request: TestResults):
+#     return write_influxdb(request)
 
-@app.get('/getresults')
-def get_results():
-    return read_influxdb()
+# @app.get('/getresults')
+# def get_results():
+#     return read_influxdb()
 
 @app.post("/store_results/")
 def write_results(results: TestResults):

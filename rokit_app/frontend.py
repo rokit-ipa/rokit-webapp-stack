@@ -18,8 +18,7 @@ ros_launch_command = "ros2 launch vicon_calculator.launch.py"
 process = None
 task = None
 result =  TestResults()
-
-
+payload = frontend_helper.payload
 def init(fastapi_app: FastAPI) -> None:
 
     def read_markdown_file(file_path):
@@ -34,28 +33,35 @@ def init(fastapi_app: FastAPI) -> None:
         await process.wait()
     
     async def stop_app(): 
-        print("I want to cancel, but dont do it")
         print(process)
         task.cancel()
         process.send_signal(signal.SIGINT)
     
-    async def start_app(payload):
+    async def start_app():
+        
         """Run a ros_launch_command in the background and display the output in the pre-created dialog."""        
-        ros_launch_command = "ros2 launch vicon_calculator.launch.py"
-        ros_launch_command += f" --test_name:={payload.test_name}"
-        ros_launch_command += f" --trial_number:={payload.trial_number}"
-        ros_launch_command += f" --robot_name:={payload.robot_name}"
-        ros_launch_command += f" --tracking_object:={payload.tracking_object}"
-        ros_launch_command += f" --temperature:={payload.temperature}"
-        ros_launch_command += f" --humidity:={payload.humidity}"
-        ros_launch_command += f" --inclination:={payload.inclination}"
-        ros_launch_command += f" --floor_type:={payload.floor_type}"
-        ros_launch_command += f" --notes:={payload.notes}"
-            
-        print("HERE IS PARAMETER LIST")
+        ros_launch_command = "ros2 launch rokit_test_stack vicon_calculator.launch.py -- "
+        if payload.robot_name=='': ros_launch_command += "robot_name:=MiR " 
+        else: ros_launch_command += f"robot_name:={payload.robot_name} "
+        if payload.trial_number=='': ros_launch_command += "trial_number:=1.0 " 
+        else:ros_launch_command += f"trial_number:={payload.trial_number} "
+        if payload.test_name=='': ros_launch_command += "test_name:=MAX_VELOCITY " 
+        else: ros_launch_command += f"test_name:={payload.test_name} "
+        if payload.tracking_object=='': ros_launch_command += "tracking_object:=rokit_1 " 
+        else: ros_launch_command += f"tracking_object:={payload.tracking_object} "
+        ros_launch_command += f"temperature:={payload.temperature} "
+        ros_launch_command += f"humidity:={payload.humidity} "
+        ros_launch_command += f"inclination:={payload.inclination} "
+        if payload.floor_type=='': ros_launch_command += "floor_type:=None "
+        else: ros_launch_command += f"floor_type:={payload.floor_type} "
+        if payload.notes =='': ros_launch_command+="notes:=None "
+        else: ros_launch_command += f"notes:={payload.notes} "
+        cmd = f'docker exec -it reverent_montalcini /bin/bash -c "source /opt/ros/foxy/setup.bash && source /home/ws/install/setup.bash && {ros_launch_command}"'
+        ##print("HERE IS PARAMETER LIST")
         print(ros_launch_command)
-        process = await asyncio.create_subprocess_exec(
-            *shlex.split(ros_launch_command), cwd=os.path.dirname(os.path.abspath(__file__))
+        process = await asyncio.create_subprocess_shell(
+            cmd,
+            cwd=os.path.dirname(os.path.abspath(__file__))
         )
 
         try:
@@ -133,19 +139,18 @@ def init(fastapi_app: FastAPI) -> None:
                 max_velocity_table = ui.table(columns=columns, rows=[], row_key='trial').classes('w-full my-10')
                 ui.label('MAX_VELOCITY_SLOPE Test Results').classes('text-h4')
                 max_velocity_slope_table = ui.table(columns=columns, rows=[], row_key='trial').classes('w-full my-10')
-                ui.button('REFRESH', on_click=update_table)
+                update_table()
+                # ui.button('REFRESH', on_click=update_table)
 
 ## Test Configuration TAB
             with ui.tab_panel(tab_list[0]):                
-                payload = TestParameters()    
- 
                 ui.label('Configure the Test').classes('text-h4')
 
                 with ui.row():
                     with ui.column().classes('h-120'):
                         with ui.card().classes('mt-10 mb-1 w-64'):
                             ui.label('Select Test').classes('text-h6')
-                            ui.select(test_list, value=test_list[1], on_change=lambda e: frontend_helper.update_test_name(e.value))
+                            ui.select(test_list, value=test_list[0], on_change=lambda e: frontend_helper.update_test_name(e.value))
                         
                         with ui.card().classes('my-1 w-64'):
                             ui.label('Set Robot details').classes('text-h6')
@@ -153,7 +158,7 @@ def init(fastapi_app: FastAPI) -> None:
                         
                         with ui.card().classes('my-1 w-64'):
                             ui.label('Select the tracking object').classes('text-h6')
-                            button0 = ui.radio(['tracker_1', 'tracker_2'], value='tracker_1', on_change=lambda: frontend_helper.update_tracking_object(button0.value)).props('inline')
+                            button0 = ui.radio(['rokit_1', 'rokit_2'], value='rokit_1', on_change=lambda: frontend_helper.update_tracking_object(button0.value)).props('inline')
                     
                     with ui.column().classes('h-120'):
                         with ui.card().classes('mt-10 mb-1 w-64'):
@@ -169,7 +174,7 @@ def init(fastapi_app: FastAPI) -> None:
                         ui.input("floor type", value="", on_change=lambda e: frontend_helper.update_floor_type(e.value))
                 
                 with ui.row().classes('mt-10 items-center justify-center'):
-                        ui.button('Start Test', on_click=start_app(payload)).classes('mx-2')
+                        ui.button('Start Test', on_click=start_app).classes('mx-2')
                         ui.button('Stop Test', on_click=stop_app).classes('mx-2')
                         
 # Protocol TAB                                        

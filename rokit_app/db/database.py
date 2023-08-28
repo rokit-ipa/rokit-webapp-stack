@@ -3,9 +3,11 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from rokit_app.db.model import TestResults
 import os
-username = os.getlogin()
-db_file_path = f"/home/{username}/sql_db.db"
-DATABASE_URL = f"sqlite:///{db_file_path}"
+# username = os.getlogin()
+# db_file_path = f"/home/{username}/sql_db.db"
+# DATABASE_URL = f"sqlite:///{db_file_path}"
+
+DATABASE_URL = f"sqlite:////home/ipa326/ws_rokit/src/rokit-test-stack/rokit_test_stack/shared/sql_db.db"
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

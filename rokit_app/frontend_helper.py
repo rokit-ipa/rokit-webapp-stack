@@ -23,6 +23,7 @@ def update_floor_type(value):
 
 def update_test_name(value):
     payload.test_name = value
+    return payload.test_name
 
 def update_robot_name(value):
     payload.robot_name=value 

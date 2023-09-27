@@ -1,14 +1,23 @@
 from fastapi import FastAPI
-import random
 from nicegui import ui
-from nicegui.events import ValueChangeEventArguments
 from rokit_app.rokitAPI import main as api
 from rokit_app.rokitAPI.models import TestParameters, TestResults
+import rokit_app.frontend_helper as frontend_helper
+import shlex
+import os
+import signal
+import asyncio 
+
 # Define the constants
 conditions_file_path = "rokit_app/static/conditions.md"
 protocols_file_path = "rokit_app/static/protocols.md"
 tab_list = ["Run Tests", "Results", "Test Protocols", "Test Conditions"]
 test_list = ["MAX_VELOCITY", "MAX_VELOCITY_SLOPE"]
+ros_launch_command = "ros2 launch vicon_calculator.launch.py"
+# define some global variables
+process = None
+task = None
+result =  TestResults()
 
 
 def init(fastapi_app: FastAPI) -> None:
@@ -18,12 +27,50 @@ def init(fastapi_app: FastAPI) -> None:
             markdown_content = f.read()
         return markdown_content
 
-    def show(event: ValueChangeEventArguments):
-        name = type(event.sender).__name__
-        ui.notify(f'{name}: {event.value}')
-
     def submit_params(payload):
         api.set_params(payload)
+    
+    async def wait_for_process(process):
+        await process.wait()
+    
+    async def stop_app(): 
+        print("I want to cancel, but dont do it")
+        print(process)
+        task.cancel()
+        process.send_signal(signal.SIGINT)
+    
+    async def start_app(payload):
+        """Run a ros_launch_command in the background and display the output in the pre-created dialog."""        
+        ros_launch_command = "ros2 launch vicon_calculator.launch.py"
+        ros_launch_command += f" --test_name:={payload.test_name}"
+        ros_launch_command += f" --trial_number:={payload.trial_number}"
+        ros_launch_command += f" --robot_name:={payload.robot_name}"
+        ros_launch_command += f" --tracking_object:={payload.tracking_object}"
+        ros_launch_command += f" --temperature:={payload.temperature}"
+        ros_launch_command += f" --humidity:={payload.humidity}"
+        ros_launch_command += f" --inclination:={payload.inclination}"
+        ros_launch_command += f" --floor_type:={payload.floor_type}"
+        ros_launch_command += f" --notes:={payload.notes}"
+            
+        print("HERE IS PARAMETER LIST")
+        print(ros_launch_command)
+        process = await asyncio.create_subprocess_exec(
+            *shlex.split(ros_launch_command), cwd=os.path.dirname(os.path.abspath(__file__))
+        )
+
+        try:
+            # Create an event loop
+            loop = asyncio.get_event_loop()
+            # Create a task for running the ros_launch_command
+            task = asyncio.create_task(wait_for_process(process))
+            print(task)
+        except asyncio.CancelledError:
+            # The task was cancelled, terminate the process
+            process.terminate()
+            # Wait for the process to terminate
+            await process.wait()
+          
+
         
     @ui.page('/ui')
     def view():
@@ -34,134 +81,103 @@ def init(fastapi_app: FastAPI) -> None:
 
         with ui.footer(value=True) as footer:
             ui.label(
-                'RoKit testing stack @ Fraunhofer IPA 2023').classes('absolute-center items-center')
+                'RoKit testing stack © Fraunhofer IPA 2023').classes('absolute-center items-center')
 
-        with ui.left_drawer(value=True, ).classes('bg-blue-100') as left_drawer_0:
+        with ui.left_drawer(value=True, ).classes('bg-blue-100'):
             ui.label('')
 
-        with ui.right_drawer(value=True).classes('bg-blue-100') as right_drawer_0:
+        with ui.right_drawer(value=True).classes('bg-blue-100'):
             ui.label('')
         
 
-
+# Results table TAB
         with ui.tab_panels(tabs, value=tab_list[0]):
             with ui.tab_panel(tab_list[1]):
-                def add_row(key):
-                    max_velocity_table.add_rows({'trial': key,
-                                     'robot name': 'MiR', 
-                                     'temperature': 25,
-                                     'humidity': 80,
-                                     'inclination': 0,
-                                     'floor_type': 'wood',
-                                     'tracking_object': 'rokit_1',
-                                     'notes': 'ambient light was less',
-                                     'velocity': random.uniform(0, 1), })
-                    max_velocity_slope_table.add_rows({'trial': key,
-                                     'robot name': 'MiR',
-                                     'temperature': 25,
-                                     'humidity': 80,
-                                     'inclination': 5,
-                                     'floor_type': 'wood',
-                                     'tracking_object': 'rokit_2',
-                                     'notes': 'ambient light was less',
-                                     'velocity': random.uniform(0, 1), })
+                # Define the function to populate the table with fetched data
+                def update_table():
+                    responses = api.read_results()
+                    max_velocity_rows = [response for response in responses if response['test name'] == 'MAX_VELOCITY']
+                    for row in max_velocity_rows:
+                        max_velocity_table.add_rows(row)
+                    max_velocity_slope_rows = [response for response in responses if response['test name'] == 'MAX_VELOCITY_SLOPE']
+                    for row in max_velocity_slope_rows:
+                        max_velocity_slope_table.add_rows(row)
+                    calculate_average_velocity(responses, 'MAX_VELOCITY')
+                    calculate_average_velocity(responses, 'MAX_VELOCITY_SLOPE')
+
+                def calculate_average_velocity(responses, test_name):
+                    velocities = [response['velocity'] for response in responses if response['test name'] == test_name]
+                    if velocities:
+                        average_velocity = sum(velocities) / len(velocities)
+                        with ui.card().classes('mt-10 mb-1 w-120'):
+                            with ui.row():
+                                ui.label(f"Average Velocity for {test_name} Test : {average_velocity:.3f} m/s").classes('text-h6').style('color: #398E3D')
+                    else:
+                        with ui.card().classes('mt-10 mb-1 w-120'):
+                            ui.label(f"No data available for {test_name} Test").classes('text-h6').style('color: #EF5350')
+
                 columns = [
                     {'name': 'trial', 'label': 'Trial name', 'field': 'trial'},
                     {'name': 'robot name', 'label': 'Robot name', 'field': 'robot name'},
-                    {'name': 'temperature',
-                        'label': 'Temperature(°C)', 'field': 'temperature'},
-                    {'name': 'humidity',
-                        'label': 'Humidity(%)', 'field': 'humidity'},
-                    {'name': 'inclination',
-                        'label': 'Inclination(degree)', 'field': 'inclination'},
+                    {'name': 'test name', 'label': 'Test name', 'field': 'test name'},
+                    {'name': 'temperature', 'label': 'Temperature(°C)', 'field': 'temperature'},
+                    {'name': 'humidity', 'label': 'Humidity(%)', 'field': 'humidity'},
+                    {'name': 'inclination', 'label': 'Inclination(degree)', 'field': 'inclination'},
                     {'name': 'tracking_object', 'label': 'Tracking Object', 'field': 'tracking_object'},
-                    {'name': 'floortype', 'label': 'Floor type', 'field': 'floortype'},
+                    {'name': 'floor_type', 'label': 'Floor type', 'field': 'floor_type'},
                     {'name': 'notes', 'label': 'Notes', 'field': 'notes'},
-                    {'name': 'velocity','label': 'Velocity(m/s)', 'field': 'velocity'},
+                    {'name': 'velocity', 'label': 'Velocity(m/s)', 'field': 'velocity'},
                 ]
 
-
                 ui.label('MAX_VELOCITY Test Results').classes('text-h4')
-                max_velocity_table = ui.table(columns=columns, rows=[],
-                                  row_key='trial').classes('w-full my-10')
-
+                max_velocity_table = ui.table(columns=columns, rows=[], row_key='trial').classes('w-full my-10')
                 ui.label('MAX_VELOCITY_SLOPE Test Results').classes('text-h4')
-                max_velocity_slope_table = ui.table(columns=columns, rows=[],
-                                  row_key='trial').classes('w-full my-10')
+                max_velocity_slope_table = ui.table(columns=columns, rows=[], row_key='trial').classes('w-full my-10')
+                ui.button('REFRESH', on_click=update_table)
 
-                add_row(1)
-                add_row(2)
-
+## Test Configuration TAB
             with ui.tab_panel(tab_list[0]):                
                 payload = TestParameters()    
  
                 ui.label('Configure the Test').classes('text-h4')
 
-                with ui.row().classes('items-center'):
-                    with ui.column().classes('items-center'):
-                        with ui.card().classes('my-5 h-40'):
+                with ui.row():
+                    with ui.column().classes('h-120'):
+                        with ui.card().classes('mt-10 mb-1 w-64'):
                             ui.label('Select Test').classes('text-h6')
-                            ui.select(test_list, value=test_list[1], on_change=lambda e: update_test_name(e.value))
-                            def update_test_name(selected_value):
-                                payload.test_name = selected_value
+                            ui.select(test_list, value=test_list[1], on_change=lambda e: frontend_helper.update_test_name(e.value))
                         
-                        with ui.card().classes('my-0 h-40'):
+                        with ui.card().classes('my-1 w-64'):
                             ui.label('Set Robot details').classes('text-h6')
-                            ui.input("robot name", value="MiR", on_change=lambda e: update_robot_name(e.value)) 
-                            def update_robot_name(selected_value):
-                                payload.robot_name=selected_value  
-                            
-                    with ui.card().classes('my-0 h-40'):
-                        ui.label('Select the tracking object').classes('text-h6')
-                        button0 = ui.radio(['tracker_1', 'tracker_2'],value='tracker_1', on_change=lambda: update_tracker(button0.value)).props('inline')
-                        def update_tracker(selected_value):
-                            payload.tracking_object=selected_value
+                            ui.input("robot name", value="MiR", on_change=lambda e: frontend_helper.update_robot_name(e.value))
                         
-                    with ui.card().classes('my-0 h-120'):
-                        ui.label('Set environment conditions').classes('text-h6')
+                        with ui.card().classes('my-1 w-64'):
+                            ui.label('Select the tracking object').classes('text-h6')
+                            button0 = ui.radio(['tracker_1', 'tracker_2'], value='tracker_1', on_change=lambda: frontend_helper.update_tracking_object(button0.value)).props('inline')
+                    
+                    with ui.column().classes('h-120'):
+                        with ui.card().classes('mt-10 mb-1 w-64'):
+                            ui.label('Set environment conditions').classes('text-h6')
+                            ui.number("trial_number", value="0", on_change=lambda e: frontend_helper.update_trial_number(e.value))
+                            ui.number("temperature", value="0.0", on_change=lambda e: frontend_helper.update_temperature(e.value))
+                            ui.number("humidity", value="0.0", on_change=lambda e: frontend_helper.update_humidity(e.value))
+                            ui.textarea("notes", value="", on_change=lambda e: frontend_helper.update_notes(e.value))
+                    
+                    with ui.card().classes('mt-10 w-64'):
+                        ui.label('Set testbed conditions').classes('text-h6')
+                        ui.number("inclination", value="0.0", on_change=lambda e: frontend_helper.update_inclination(e.value))
+                        ui.input("floor type", value="", on_change=lambda e: frontend_helper.update_floor_type(e.value))
+                
+                with ui.row().classes('mt-10 items-center justify-center'):
+                        ui.button('Start Test', on_click=start_app(payload)).classes('mx-2')
+                        ui.button('Stop Test', on_click=stop_app).classes('mx-2')
                         
-                        def update_trial_number(selected_value):
-                            payload.trial_number=selected_value  
-
-                        def update_temperature(selected_value):
-                            payload.temperature=selected_value       
-
-                        def update_humidity(selected_value):
-                            payload.humidity=selected_value
-
-                        def update_notes(selected_value):
-                            payload.notes=selected_value
-
-                        def update_inclination(selected_value):
-                            payload.inclination=float(selected_value)
-
-                        def update_floor_type(selected_value):
-                            payload.floor_type=selected_value
-
-                        ui.number("trial_number", value="0", on_change=lambda e: update_trial_number(e.value))
-                        ui.number("temperature", value="0.0", on_change=lambda e: update_temperature(e.value))                        
-                        ui.number("humidity", value="0.0", on_change=lambda e: update_humidity(e.value))
-                        ui.textarea("notes", value="", on_change=lambda e: update_notes(e.value))
-                        
-                    with ui.card().classes('my-0 h-120'):
-                        ui.label('Set testbed conditions').classes(
-                            'text-h6')
-                        ui.number("inclination", value="0.0", on_change=lambda e: update_inclination(e.value))
-                        ui.input("floor type", value="", on_change=lambda e: update_floor_type(e.value)) 
-                        
-                ## on_click=lambda: ui.notify('Saved parameters!', type='positive',
-                    with ui.card().classes('my-5'):
-                        with ui.row().classes('items-center'):
-                            ui.button('Save parameters', on_click=lambda: submit_params(payload))
-                            ui.button('Start Trackers',  on_click=lambda: ui.notify(f'Trackers are running now!'))
-                            ui.button('Start Test', on_click=lambda: ui.notify(f'Test started!'))
-                            ui.button('Test Result', on_click=lambda: ui.notify('Check Results Tab!'))
-
-
+# Protocol TAB                                        
             with ui.tab_panel(tab_list[2]):
                 markdown_content = read_markdown_file(protocols_file_path)
                 ui.markdown(markdown_content)
 
+# Test Conditions TAB
             with ui.tab_panel(tab_list[3]):
                 markdown_content = read_markdown_file(conditions_file_path)
                 ui.markdown(markdown_content)

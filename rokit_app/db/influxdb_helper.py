@@ -22,14 +22,15 @@ query_api = client.query_api()
 
 def write_influxdb(data):
     point = influxdb_client.Point(data.test_name)  \
-        .field("trial_number", data.trial_number) \
-        .field("robot_name", data.robot_name) \
-        .field("tracking_object", data.tracking_object) \
-        .field("temperature", data.temperature) \
-        .field("humidity", data.humidity) \
-        .field("inclination", data.inclination) \
-        .field("floor_type", data.floor_type) \
-        .field("notes", data.notes)
+        .tag("robot_name", data.robot_name) \
+        .tag("trial_number", data.trial_number) \
+        .tag("tracking_object", data.tracking_object) \
+        .tag("temperature", data.temperature) \
+        .tag("humidity", data.humidity) \
+        .tag("inclination", data.inclination) \
+        .tag("floor_type", data.floor_type) \
+        .tag("notes", data.notes) \
+        .tag("velocity", data.velocity) 
     try:
         write_api.write(bucket=bucket, org=org, record=point)
         response = {"message": "Data logged to the db"}
@@ -41,24 +42,16 @@ def write_influxdb(data):
     return response
 
 def read_influxdb():
-    query = f'from(bucket: "{bucket}") |> range(start: -3h) |> filter(fn: (r) => r._measurement == "MAX_VELOCITY")'
-    result = query_api.query(org=org, query=query)  
     results = []
+    query = f'from(bucket: "rokit-db") \
+            |> range(start: -1h)  \
+            |> filter(fn: (r) => r["_measurement"] == "MAX_VELOCITY" )\
+            |> filter(fn:(r) => r.robot_name == "MiR")'
+    result = query_api.query(org=org, query=query)
     for table in result:
         for record in table.records:
-            results.append((record.get_field(), record.get_value()))
-            print(results)
-    return result
+            results.append((record.tag(), record.get_value()))
+    return results
 
 def read_influxdb_query(measurement, start_time, end_time):
-    query_api = client.query_api()
-
-    query = f'from(bucket: "{bucket}") \
-        |> range(start: {start_time}, stop: {end_time}) \
-        |> filter(fn: (r) => r["_measurement"] == "{measurement}")'
-
-    try:
-        result = query_api.query(org=org, query=query)
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    pass

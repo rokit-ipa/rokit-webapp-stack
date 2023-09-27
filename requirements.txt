@@ -6,3 +6,5 @@ numpy
 pydantic
 uvicorn
 python-dotenv
+sqlalchemy 
+psycopg2-binary

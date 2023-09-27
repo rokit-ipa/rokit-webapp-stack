@@ -2,7 +2,7 @@ influxdb.conf/
 influxdb2/
 config.yaml/
 .vscode
-
+temp.py
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -125,7 +125,6 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
 .venv
 env/
 venv/
